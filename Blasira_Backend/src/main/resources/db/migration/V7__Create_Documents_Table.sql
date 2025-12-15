@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS documents (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    document_type VARCHAR(255) NOT NULL,
+    file_path VARCHAR(255) NOT NULL,
+    status VARCHAR(255) NOT NULL DEFAULT 'PENDING',
+    rejection_reason TEXT,
+    created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    FOREIGN KEY (user_id) REFERENCES user_accounts(id)
+);
