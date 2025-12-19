@@ -1,25 +1,21 @@
 package com.example.Blasira_Backend.service;
 
 import com.example.Blasira_Backend.dto.document.DocumentDto;
-import com.example.Blasira_Backend.dto.admin.UpdateDocumentStatusRequest;
 import com.example.Blasira_Backend.exception.UserNotFoundException;
 import com.example.Blasira_Backend.model.Document;
 import com.example.Blasira_Backend.model.UserAccount;
 import com.example.Blasira_Backend.model.enums.DocumentType;
-import com.example.Blasira_Backend.model.enums.DocumentStatus; // NEW
+import com.example.Blasira_Backend.model.enums.DocumentStatus;
 import com.example.Blasira_Backend.repository.DocumentRepository;
 import com.example.Blasira_Backend.repository.UserAccountRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.persistence.EntityNotFoundException; // NEW
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.UUID;
+import java.net.MalformedURLException; // Added for loadDocumentAsResource
 
 @Service
 @RequiredArgsConstructor
@@ -27,35 +23,22 @@ public class DocumentService {
 
     private final DocumentRepository documentRepository;
     private final UserAccountRepository userAccountRepository;
-    // Inject a StorageService here if using external storage (e.g., S3, Cloudinary)
-    // private final StorageService storageService;
-
-    // Placeholder for local storage directory (should be configured externally)
-    private final String uploadDir = "uploads/documents/";
+    private final StorageService storageService; // Inject StorageService
 
     @Transactional
     public DocumentDto uploadDocument(Long userId, DocumentType documentType, MultipartFile file) {
         UserAccount user = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
-        // 1. Store the file
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path filePath = Paths.get(uploadDir + fileName);
-
-        try {
-            // Ensure the upload directory exists
-            Files.createDirectories(filePath.getParent());
-            Files.copy(file.getInputStream(), filePath);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store file", e);
-        }
+        // 1. Store the file using StorageService
+        String uniqueFilename = storageService.store(file); // Store the unique filename
 
         // 2. Save document metadata to database
         Document document = new Document();
         document.setUser(user);
         document.setDocumentType(documentType);
-        document.setFilePath(filePath.toString()); // Store local path for now
-        document.setStatus(DocumentStatus.PENDING); // Default status NEW
+        document.setFilePath(uniqueFilename); // Store only the unique filename
+        document.setStatus(DocumentStatus.PENDING); // Default status
         Document savedDocument = documentRepository.save(document);
 
         // 3. Update user's overall verification status to PENDING
@@ -73,15 +56,18 @@ public class DocumentService {
         document.setStatus(newStatus);
         document.setRejectionReason(rejectionReason); // Set null if not rejected
 
-        // If a document is approved or rejected, potentially update the user's overall verification status
-        // This logic might be better placed in AdminService depending on the overall verification flow.
-        if (newStatus == DocumentStatus.APPROVED || newStatus == DocumentStatus.REJECTED) {
-            // Example: trigger re-evaluation of user's overall verification status
-            // For now, we'll leave this to AdminService to manage the overall user verification flow
-        }
-
         Document updatedDocument = documentRepository.save(document);
         return mapToDocumentDto(updatedDocument);
+    }
+
+    // New method to load document as a resource
+    @Transactional(readOnly = true)
+    public Resource loadDocumentAsResource(Long documentId) throws MalformedURLException {
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new EntityNotFoundException("Document not found with ID: " + documentId));
+        
+        // Use the filename stored in the database to load the resource
+        return storageService.loadAsResource(document.getFilePath());
     }
 
     private DocumentDto mapToDocumentDto(Document document) {
@@ -89,8 +75,8 @@ public class DocumentService {
                 .id(document.getId())
                 .userId(document.getUser().getId())
                 .documentType(document.getDocumentType().name())
-                .filePath(document.getFilePath())
-                .status(document.getStatus().name()) // Use .name() for enum
+                .filePath(document.getFilePath()) // Now just the filename
+                .status(document.getStatus().name())
                 .rejectionReason(document.getRejectionReason())
                 .createdAt(document.getCreatedAt())
                 .updatedAt(document.getUpdatedAt())

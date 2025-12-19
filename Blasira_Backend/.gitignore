@@ -2,3 +2,6 @@ target/
 uploads/
 .env
 *.log
+# Outils IA / IDE
+Blasira_Backend/.augment/
+Blasira_Backend/.cursor/

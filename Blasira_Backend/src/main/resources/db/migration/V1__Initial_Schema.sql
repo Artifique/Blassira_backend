@@ -32,16 +32,6 @@ CREATE TABLE conversations (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE documents (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    document_type ENUM('DRIVING_LICENSE','IDENTITY_CARD','INSURANCE','VEHICLE_REGISTRATION') NOT NULL,
-    file_url VARCHAR(255) NOT NULL,
-    status ENUM('PENDING','APPROVED','REJECTED') NOT NULL,
-    uploaded_at DATETIME(6),
-    driver_profile_id BIGINT NOT NULL,
-    PRIMARY KEY (id)
-) ENGINE=InnoDB;
-
 CREATE TABLE driver_profiles (
     id BIGINT NOT NULL,
     average_rating FLOAT(53),
@@ -186,7 +176,6 @@ ALTER TABLE bookings ADD CONSTRAINT FK88eyq095hps8dgyrprdmoelge FOREIGN KEY (pro
 ALTER TABLE bookings ADD CONSTRAINT FK76g5jpvf8bcqejvp5d2vgrnjb FOREIGN KEY (trip_id) REFERENCES trips (id);
 ALTER TABLE conversation_participants ADD CONSTRAINT FK1e7cc420omf1ficfjcbwtavwb FOREIGN KEY (user_profile_id) REFERENCES user_profiles (id);
 ALTER TABLE conversation_participants ADD CONSTRAINT FK84npv3fo2vwl7ut63im0p417q FOREIGN KEY (conversation_id) REFERENCES conversations (id);
-ALTER TABLE documents ADD CONSTRAINT FKbliog68rb5d03w5rop75os47d FOREIGN KEY (driver_profile_id) REFERENCES driver_profiles (id);
 ALTER TABLE driver_profiles ADD CONSTRAINT FKsff8hplj067t5t351uswcb542 FOREIGN KEY (id) REFERENCES user_accounts (id);
 ALTER TABLE incident_reports ADD CONSTRAINT FK4myd1ljdiq24g0msk9uxtsf39 FOREIGN KEY (booking_id) REFERENCES bookings (id);
 ALTER TABLE incident_reports ADD CONSTRAINT FK6gpqskoujmve74p7x8nlip81n FOREIGN KEY (reporter_id) REFERENCES user_profiles (id);

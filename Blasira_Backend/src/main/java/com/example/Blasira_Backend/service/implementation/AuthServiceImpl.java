@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -99,6 +100,50 @@ public class AuthServiceImpl implements AuthService {
         // 3. Générer et retourner un nouveau token JWT.
         var jwt = jwtService.generateToken(user);
         return JwtAuthenticationResponse.builder().token(jwt).build();
+    }
+
+    @Override
+    public String requestOtp(String phoneNumber) {
+        UserAccount user = userAccountRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé avec le numéro de téléphone : " + phoneNumber));
+
+        // Generate a 6-digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
+        LocalDateTime expiryTime = LocalDateTime.now().plusMinutes(5); // OTP valid for 5 minutes
+
+        user.setOtpCode(otp);
+        user.setOtpExpiration(expiryTime);
+        userAccountRepository.save(user);
+
+        System.out.println("OTP généré pour " + phoneNumber + " : " + otp + " (expire à " + expiryTime + ")");
+        // In a real application, you would send this OTP via SMS or email.
+        // For development, we return it in the API response (handled in the controller).
+        return otp;
+    }
+
+    @Override
+    public boolean verifyOtp(String phoneNumber, String otp) {
+        UserAccount user = userAccountRepository.findByPhoneNumber(phoneNumber)
+                .orElseThrow(() -> new IllegalArgumentException("Utilisateur non trouvé avec le numéro de téléphone : " + phoneNumber));
+
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(otp)) {
+            return false; // OTP does not match
+        }
+
+        if (user.getOtpExpiration() == null || user.getOtpExpiration().isBefore(LocalDateTime.now())) {
+            // OTP expired, clear it
+            user.setOtpCode(null);
+            user.setOtpExpiration(null);
+            userAccountRepository.save(user);
+            return false;
+        }
+
+        // OTP is valid, clear it after successful verification and enable the user
+        user.setOtpCode(null);
+        user.setOtpExpiration(null);
+        user.setEmailVerified(true); // Enable the user account
+        userAccountRepository.save(user);
+        return true;
     }
 
     private void notifyAdminOfNewSignup(UserAccount newUser) {

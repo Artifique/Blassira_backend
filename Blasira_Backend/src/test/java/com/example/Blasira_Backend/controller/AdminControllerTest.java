@@ -16,6 +16,10 @@ import com.example.Blasira_Backend.service.LocationCacheService;
 import com.example.Blasira_Backend.service.MessageService;
 import com.example.Blasira_Backend.service.PaymentService;
 import com.example.Blasira_Backend.service.ReviewService;
+import com.example.Blasira_Backend.service.SupportTicketService; // NEW
+import com.example.Blasira_Backend.repository.AppSettingRepository; // NEW
+import com.example.Blasira_Backend.controller.SupportTicketController; // NEW
+import com.fasterxml.jackson.databind.ObjectMapper; // NEW
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -49,7 +53,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         ReviewController.class,
         com.example.Blasira_Backend.service.ReviewService.class,
         com.example.Blasira_Backend.repository.ReviewRepository.class,
-        com.example.Blasira_Backend.config.JpaConfig.class
+        SupportTicketController.class // NEW
     })
 )
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -60,6 +64,7 @@ public class AdminControllerTest {
 
     @MockBean
     private AdminService adminService;
+    @MockBean private SupportTicketService supportTicketService; // NEW
 
     // Additional MockBeans for services injected in AdminController or its dependencies
     // (This part might need to be expanded based on what AdminService depends on directly
@@ -80,7 +85,11 @@ public class AdminControllerTest {
     @MockBean private PaymentService paymentService; // NEW
     @MockBean private SharedTripLinkRepository sharedTripLinkRepository;
     @MockBean private ReviewRepository reviewRepository; // NEW
-    @MockBean private ReviewService reviewService; // NEW // NEW // NEW
+    @MockBean private ReviewService reviewService; // NEW
+    @MockBean private AppSettingRepository appSettingRepository; // NEW
+    @MockBean private ObjectMapper objectMapper; // NEW
+    @MockBean private SupportTicketRepository supportTicketRepository; // NEW
+    @MockBean private SupportTicketMessageRepository supportTicketMessageRepository; // NEW
 
 
     @Test

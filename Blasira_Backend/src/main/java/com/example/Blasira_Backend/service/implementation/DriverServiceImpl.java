@@ -34,7 +34,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional
     public void applyToBecomeDriver(UserDetails currentUser) {
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
 
         DriverProfile driverProfile = user.getDriverProfile();
@@ -54,7 +54,7 @@ public class DriverServiceImpl implements DriverService {
 
     @Transactional
     public DocumentDto uploadDocument(MultipartFile file, DocumentType documentType, UserDetails currentUser) {
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
 
         DriverProfile driverProfile = user.getDriverProfile();
@@ -105,7 +105,7 @@ public class DriverServiceImpl implements DriverService {
     @Override
     @Transactional(readOnly = true)
     public DriverProfileStatus getDriverStatus(UserDetails currentUser) {
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
 
         DriverProfile driverProfile = user.getDriverProfile();

@@ -17,16 +17,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Trip> findAndLockById(Long id);
 
-
-    /**
-     * Recherche des trajets basés sur le lieu de départ, le lieu de destination et un jour spécifique.
-     * La requête est insensible à la casse et recherche des correspondances partielles dans les adresses.
-     * @param departure La chaîne de lieu de départ à rechercher.
-     * @param destination La chaîne de lieu de destination à rechercher.
-     * @param startOfDay Le début du jour dans lequel rechercher.
-     * @param endOfDay La fin du jour dans lequel rechercher.
-     * @return Une liste de trajets correspondants.
-     */
     @Query("SELECT t FROM Trip t WHERE " +
            "LOWER(t.departureAddress) LIKE LOWER(CONCAT('%', :departure, '%')) AND " +
            "LOWER(t.destinationAddress) LIKE LOWER(CONCAT('%', :destination, '%')) AND " +
@@ -37,10 +27,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
                            @Param("startOfDay") LocalDateTime startOfDay,
                            @Param("endOfDay") LocalDateTime endOfDay);
 
-    /**
-     * Trouve tous les trajets créés par un conducteur spécifique.
-     * @param driver Le profil du conducteur.
-     * @return Une liste de trajets pour ce conducteur.
-     */
     List<Trip> findByDriver(DriverProfile driver);
+
+    long countByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
+    List<Trip> findTop5ByOrderByCreatedAtDesc();
 }

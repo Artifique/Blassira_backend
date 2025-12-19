@@ -53,7 +53,7 @@ public class TripServiceImpl implements TripService {
     @Transactional // Assure l'atomicité de l'opération. Soit tout réussit, soit tout est annulé.
     public TripDto createTrip(CreateTripRequest request, UserDetails currentUser) {
         // 1. Récupérer l'entité complète de l'utilisateur à partir de son email (username).
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur authentifié non trouvé en base de données."));
 
         DriverProfile driverProfile = driverProfileRepository.findById(user.getId())
@@ -121,7 +121,7 @@ public class TripServiceImpl implements TripService {
     @Override
     @Transactional(readOnly = true)
     public List<MyTripDetailsDto> getMyTrips(UserDetails currentUser) {
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur authentifié non trouvé en base de données."));
 
         DriverProfile driverProfile = user.getDriverProfile();
@@ -140,7 +140,7 @@ public class TripServiceImpl implements TripService {
     @Override
     @Transactional
     public TripDto updateTripStatus(Long tripId, TripStatus newStatus, UserDetails currentUser) {
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur authentifié non trouvé."));
 
         Trip trip = tripRepository.findById(tripId)

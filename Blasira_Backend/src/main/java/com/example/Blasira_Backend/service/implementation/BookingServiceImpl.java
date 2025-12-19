@@ -37,7 +37,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public BookingDto createBooking(CreateBookingRequest request, UserDetails currentUser) {
-        UserAccount passenger = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount passenger = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
 
         Trip trip = tripRepository.findById(request.getTripId())
@@ -81,7 +81,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingDto updateBookingStatus(Long bookingId, BookingStatus newStatus, UserDetails driverDetails) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("Booking not found."));
-        UserAccount driver = userAccountRepository.findByEmail(driverDetails.getUsername())
+        UserAccount driver = userAccountRepository.findByPhoneNumber(driverDetails.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated driver not found."));
 
         if (!booking.getTrip().getDriver().getUserAccount().getId().equals(driver.getId())) {
@@ -112,7 +112,7 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional(readOnly = true)
     public List<BookingDto> getMyBookings(UserDetails currentUser) {
-        UserAccount passenger = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount passenger = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
 
         List<Booking> bookings = bookingRepository.findByPassenger(passenger.getUserProfile());

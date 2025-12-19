@@ -7,6 +7,8 @@ import com.example.Blasira_Backend.model.UserAccount;
 import com.example.Blasira_Backend.model.enums.IncidentReportStatus;
 import com.example.Blasira_Backend.model.enums.Role;
 import com.example.Blasira_Backend.service.AdminService;
+import com.example.Blasira_Backend.dto.admin.settings.SettingsDto; // NEW
+import com.example.Blasira_Backend.service.AdminSettingsService; // NEW
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +30,7 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AdminSettingsService adminSettingsService; // Inject AdminSettingsService
 
     /**
      * Récupère les statistiques pour le tableau de bord de l'administrateur.
@@ -36,6 +39,25 @@ public class AdminController {
     @GetMapping("/dashboard-stats")
     public ResponseEntity<AdminDashboardStatsDto> getDashboardStats() {
         return ResponseEntity.ok(adminService.getDashboardStats());
+    }
+
+    /**
+     * Récupère la configuration actuelle de l'application.
+     * @return Le DTO de la configuration de l'application.
+     */
+    @GetMapping("/settings")
+    public ResponseEntity<SettingsDto> getSettings() {
+        return ResponseEntity.ok(adminSettingsService.getSettings());
+    }
+
+    /**
+     * Met à jour la configuration de l'application.
+     * @param request L'objet SettingsDto complet avec les valeurs modifiées.
+     * @return L'objet SettingsDto mis à jour.
+     */
+    @PutMapping("/settings")
+    public ResponseEntity<SettingsDto> updateSettings(@RequestBody SettingsDto request) {
+        return ResponseEntity.ok(adminSettingsService.updateSettings(request));
     }
 
     /**
@@ -134,9 +156,29 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllUsers());
     }
 
+    /**
+     * Permet à un administrateur de modifier les détails d'un utilisateur.
+     * @param userId L'ID de l'utilisateur à modifier.
+     * @param request Le DTO contenant les champs à mettre à jour (prénom, nom, email, téléphone, mot de passe).
+     * @return Le DTO de l'utilisateur mis à jour.
+     */
+    @PutMapping("/users/{userId}")
+    public ResponseEntity<UserDto> updateUserDetails(@PathVariable Long userId, @RequestBody UpdateUserRequest request) {
+        return ResponseEntity.ok(adminService.updateUserDetails(userId, request));
+    }
+
     @GetMapping("/vehicles")
     public ResponseEntity<List<com.example.Blasira_Backend.dto.vehicle.VehicleDto>> getAllVehicles() {
         return ResponseEntity.ok(adminService.getAllVehicles());
+    }
+
+    /**
+     * Récupère la liste de tous les documents des utilisateurs avec leur statut.
+     * @return Une liste de DTOs contenant les informations de statut des documents des utilisateurs.
+     */
+    @GetMapping("/documents")
+    public ResponseEntity<List<UserDocumentStatusDto>> getUserDocumentStatuses() {
+        return ResponseEntity.ok(adminService.getUserDocumentStatuses());
     }
 
     @PutMapping("/vehicles/{vehicleId}/status")

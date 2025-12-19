@@ -24,7 +24,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     @Transactional(readOnly = true)
     public ProfileDto getMyProfile(UserDetails currentUser) {
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
         return mapToProfileDto(user);
     }
@@ -32,7 +32,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     @Override
     @Transactional
     public ProfileDto updateMyProfile(UpdateUserProfileRequest request, UserDetails currentUser) {
-        UserAccount user = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount user = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new IllegalStateException("Authenticated user not found."));
 
         UserProfile profile = user.getUserProfile();

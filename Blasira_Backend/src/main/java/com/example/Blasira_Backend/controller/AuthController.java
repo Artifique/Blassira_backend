@@ -1,8 +1,6 @@
 package com.example.Blasira_Backend.controller;
 
-import com.example.Blasira_Backend.dto.auth.JwtAuthenticationResponse;
-import com.example.Blasira_Backend.dto.auth.LoginRequest;
-import com.example.Blasira_Backend.dto.auth.SignUpRequest;
+import com.example.Blasira_Backend.dto.auth.*;
 import com.example.Blasira_Backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Contrôleur gérant les endpoints publics pour l'authentification.
@@ -40,5 +41,30 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<JwtAuthenticationResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /**
+     * Endpoint pour demander un OTP pour un numéro de téléphone donné.
+     * Pour le développement, le code OTP est retourné dans la réponse.
+     * @param request Le DTO contenant le numéro de téléphone.
+     * @return Une réponse contenant le code OTP généré.
+     */
+    @PostMapping("/request-otp")
+    public ResponseEntity<Map<String, String>> requestOtp(@RequestBody OtpRequest request) {
+        String otp = authService.requestOtp(request.getPhoneNumber());
+        Map<String, String> response = new HashMap<>();
+        response.put("otp", otp);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Endpoint pour vérifier un OTP.
+     * @param request Le DTO contenant le numéro de téléphone et le code OTP.
+     * @return Une réponse indiquant si la vérification a réussi (true) ou échoué (false).
+     */
+    @PostMapping("/verify-otp")
+    public ResponseEntity<Boolean> verifyOtp(@RequestBody OtpVerificationRequest request) {
+        boolean isValid = authService.verifyOtp(request.getPhoneNumber(), request.getOtp());
+        return ResponseEntity.ok(isValid);
     }
 }

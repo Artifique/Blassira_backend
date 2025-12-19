@@ -27,7 +27,7 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     @Transactional
     public VehicleDto addVehicle(CreateVehicleRequest request, UserDetails currentUser) {
-        UserAccount owner = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount owner = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé."));
 
         Vehicle vehicle = new Vehicle();
@@ -46,7 +46,7 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     @Transactional(readOnly = true)
     public List<VehicleDto> getMyVehicles(UserDetails currentUser) {
-        UserAccount owner = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount owner = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé."));
 
         List<Vehicle> vehicles = vehicleRepository.findByOwner(owner);
@@ -58,7 +58,7 @@ public class VehicleServiceImpl implements VehicleService {
     @Override
     @Transactional
     public void deleteVehicle(Long vehicleId, UserDetails currentUser) {
-        UserAccount owner = userAccountRepository.findByEmail(currentUser.getUsername())
+        UserAccount owner = userAccountRepository.findByPhoneNumber(currentUser.getUsername())
                 .orElseThrow(() -> new UserNotFoundException("Utilisateur non trouvé."));
 
         Vehicle vehicle = vehicleRepository.findById(vehicleId)

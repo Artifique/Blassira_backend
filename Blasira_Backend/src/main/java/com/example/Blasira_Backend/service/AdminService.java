@@ -1,9 +1,6 @@
 package com.example.Blasira_Backend.service;
 
-import com.example.Blasira_Backend.dto.admin.AdminDashboardStatsDto;
-import com.example.Blasira_Backend.dto.admin.DriverApplicationDto;
-import com.example.Blasira_Backend.dto.admin.UserDto;
-import com.example.Blasira_Backend.dto.admin.VerificationRequestDto;
+import com.example.Blasira_Backend.dto.admin.*;
 import com.example.Blasira_Backend.exception.UserProfileNotFoundException;
 import com.example.Blasira_Backend.model.DriverProfile;
 import com.example.Blasira_Backend.model.UserAccount;
@@ -11,39 +8,45 @@ import com.example.Blasira_Backend.model.UserProfile;
 import com.example.Blasira_Backend.model.enums.DriverProfileStatus;
 import com.example.Blasira_Backend.model.enums.Role;
 import com.example.Blasira_Backend.repository.*;
-import com.example.Blasira_Backend.dto.admin.CreatePromoCodeDto;
-import com.example.Blasira_Backend.dto.admin.IncidentStatusUpdateDto;
-import com.example.Blasira_Backend.dto.admin.PromoCodeDto;
 import com.example.Blasira_Backend.model.IncidentReport;
 import com.example.Blasira_Backend.model.PromoCode;
 import com.example.Blasira_Backend.model.enums.DiscountType;
 import com.example.Blasira_Backend.repository.IncidentReportRepository;
 import com.example.Blasira_Backend.repository.PromoCodeRepository;
-import com.example.Blasira_Backend.dto.admin.UpdateVehicleStatusDto;
 import com.example.Blasira_Backend.model.Vehicle;
 import com.example.Blasira_Backend.repository.VehicleRepository;
 import com.example.Blasira_Backend.model.Trip;
 import com.example.Blasira_Backend.dto.trip.TripDto;
-import com.example.Blasira_Backend.dto.admin.FinancialReportDto;
+
 import java.time.LocalDate;
 import java.util.Map;
-import com.example.Blasira_Backend.dto.admin.AppConfigDto;
-import com.example.Blasira_Backend.dto.admin.UpdateAppConfigRequest;
+
 import com.example.Blasira_Backend.model.AppConfig;
 import com.example.Blasira_Backend.repository.AppConfigRepository;
 import com.example.Blasira_Backend.service.IncidentReportService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.Blasira_Backend.dto.document.DocumentDto; // NEW
 import com.example.Blasira_Backend.model.enums.DocumentType; // NEW
 import com.example.Blasira_Backend.model.enums.DocumentStatus; // NEW
-import com.example.Blasira_Backend.dto.admin.AdminMessageRequest;
 import com.example.Blasira_Backend.dto.message.SendMessageRequest;
+import com.example.Blasira_Backend.model.AdminNotification; // NEW
+import com.example.Blasira_Backend.repository.AdminNotificationRepository; // NEW
+import com.fasterxml.jackson.core.JsonProcessingException; // NEW
+import com.fasterxml.jackson.databind.ObjectMapper; // NEW
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.stream.Collectors;
@@ -64,19 +67,119 @@ public class AdminService {
     private final VehicleRepository vehicleRepository;
     private final AppConfigRepository appConfigRepository;
     private final DocumentRepository documentRepository;
-    private final DocumentService documentService; // NEW
+    private final DocumentService documentService;
     private final MessageService messageService;
+    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
+    private final AdminNotificationRepository adminNotificationRepository; // NEW
+    private final ObjectMapper objectMapper; // NEW
 
+    @Transactional(readOnly = true)
     public AdminDashboardStatsDto getDashboardStats() {
         long totalUsers = userAccountRepository.count();
         long totalTrips = tripRepository.count();
         long totalBookings = bookingRepository.count();
 
+        // Calculate Daily Activity (last 30 days)
+        Map<LocalDate, Long> dailyActivity = new LinkedHashMap<>();
+        LocalDate today = LocalDate.now();
+        for (int i = 29; i >= 0; i--) {
+            LocalDate date = today.minusDays(i);
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(23, 59, 59);
+
+            long newUsers = userAccountRepository.countByCreatedAtBetween(startOfDay, endOfDay);
+            long newTrips = tripRepository.countByCreatedAtBetween(startOfDay, endOfDay);
+            // You can add more metrics here, e.g., new bookings
+            dailyActivity.put(date, newUsers + newTrips);
+        }
+
+        // Calculate Monthly Trends (last 12 months)
+        Map<String, Map<String, Long>> monthlyTrends = new LinkedHashMap<>();
+        for (int i = 11; i >= 0; i--) {
+            LocalDate monthStart = today.minusMonths(i).withDayOfMonth(1);
+            LocalDateTime startOfMonth = monthStart.atStartOfDay();
+            LocalDateTime endOfMonth = monthStart.withDayOfMonth(monthStart.lengthOfMonth()).atTime(23, 59, 59);
+
+            long newUsers = userAccountRepository.countByCreatedAtBetween(startOfMonth, endOfMonth);
+            long newTrips = tripRepository.countByCreatedAtBetween(startOfMonth, endOfMonth);
+            long newBookings = bookingRepository.countByCreatedAtBetween(startOfMonth, endOfMonth); // Assuming Booking has createdAt
+
+            Map<String, Long> monthData = new LinkedHashMap<>();
+            monthData.put("newUsers", newUsers);
+            monthData.put("newTrips", newTrips);
+            monthData.put("newBookings", newBookings);
+
+            monthlyTrends.put(monthStart.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM")), monthData);
+        }
+
+
+        // Fetch Recent Activities (last 5 of each)
+        List<String> recentActivities = new ArrayList<>();
+
+        // Recent Users
+        userAccountRepository.findTop5ByOrderByCreatedAtDesc().forEach(user ->
+            recentActivities.add("Nouvel utilisateur: " + user.getEmail() + " (" + user.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")) + ")")
+        );
+
+        // Recent Trips
+        tripRepository.findTop5ByOrderByCreatedAtDesc().forEach(trip ->
+            recentActivities.add("Nouveau trajet: " + trip.getDepartureAddress() + " à " + trip.getDestinationAddress() + " (" + trip.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")) + ")")
+        );
+
+        // Recent Bookings (Assuming Booking has createdAt and relevant details)
+        bookingRepository.findTop5ByOrderByCreatedAtDesc().forEach(booking ->
+            recentActivities.add("Nouvelle réservation: " + booking.getBookedSeats() + " place(s) sur trajet " + booking.getTrip().getId() + " (" + booking.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")) + ")")
+        );
+
+        // Sort recent activities by timestamp (descending)
+        // This requires parsing timestamps from the strings, which is complex.
+        // For simplicity, we'll assume they are roughly ordered by fetch, or just list them as is.
+        // If exact chronological order is needed, a dedicated ActivityLog entity would be better.
+        // For now, they are added in order of User, Trip, Booking fetches.
+
         return AdminDashboardStatsDto.builder()
                 .totalUsers(totalUsers)
                 .totalTrips(totalTrips)
                 .totalBookings(totalBookings)
+                .dailyActivity(dailyActivity)
+                .monthlyTrends(monthlyTrends)
+                .recentActivities(recentActivities)
                 .build();
+    }
+    
+    @Transactional
+    public UserDto updateUserDetails(Long userId, UpdateUserRequest request) {
+        UserAccount userAccount = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new UserProfileNotFoundException("User account not found with id: " + userId));
+
+        UserProfile userProfile = userAccount.getUserProfile();
+        if (userProfile == null) {
+            throw new UserProfileNotFoundException("User profile not found for user id: " + userId);
+        }
+
+        // Update UserAccount details
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            userAccount.setEmail(request.getEmail());
+        }
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
+            userAccount.setPhoneNumber(request.getPhoneNumber());
+        }
+        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
+            userAccount.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        // Update UserProfile details
+        if (request.getFirstName() != null && !request.getFirstName().isEmpty()) {
+            userProfile.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null && !request.getLastName().isEmpty()) {
+            userProfile.setLastName(request.getLastName());
+        }
+        
+        userAccountRepository.save(userAccount);
+        userProfileRepository.save(userProfile); // Save changes to UserProfile
+
+        return mapToUserDto(userAccount);
     }
 
     @Transactional(readOnly = true)
@@ -245,6 +348,41 @@ public class AdminService {
     public List<UserDto> getAllUsers() {
         return userAccountRepository.findAll().stream()
                 .map(this::mapToUserDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserDocumentStatusDto> getUserDocumentStatuses() {
+        return userAccountRepository.findAll().stream()
+                .map(userAccount -> {
+                    UserProfile userProfile = userAccount.getUserProfile();
+                    // Find the most relevant document for status display (e.g., latest or most critical)
+                    // For simplicity, we'll take the first document found if any.
+                    // Or, we can specifically look for a DRIVERS_LICENCE if that's the primary verification.
+                    List<com.example.Blasira_Backend.model.Document> documents = documentRepository.findByUser(userAccount);
+                    com.example.Blasira_Backend.model.Document primaryDocument = null;
+                    if (!documents.isEmpty()) {
+                        // Prioritize DRIVERS_LICENCE, then ID_CARD, then any other
+                        primaryDocument = documents.stream()
+                                .filter(doc -> doc.getDocumentType() == DocumentType.DRIVERS_LICENCE)
+                                .findFirst()
+                                .orElse(documents.stream()
+                                        .filter(doc -> doc.getDocumentType() == DocumentType.ID_CARD)
+                                        .findFirst()
+                                        .orElse(documents.get(0))); // Fallback to the first one if no specific types
+                    }
+
+                    return UserDocumentStatusDto.builder()
+                            .userId(userAccount.getId())
+                            .firstName(userProfile != null ? userProfile.getFirstName() : null)
+                            .lastName(userProfile != null ? userProfile.getLastName() : null)
+                            .email(userAccount.getEmail())
+                            .roles(userAccount.getRoles().stream().map(Enum::name).collect(Collectors.toList()))
+                            .documentId(primaryDocument != null ? primaryDocument.getId() : null)
+                            .documentStatus(primaryDocument != null ? primaryDocument.getStatus() : null)
+                            .documentUploadDate(primaryDocument != null ? primaryDocument.getCreatedAt() : null)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
@@ -432,18 +570,34 @@ public class AdminService {
         Long adminId = adminUser.getId();
         List<Long> recipientIds = request.getRecipientIds();
 
-        // Si la liste des destinataires est vide, considérer cela comme une diffusion à tous les utilisateurs.
+        // If the list of recipients is empty, consider this as a diffusion à tous les utilisateurs.
+        List<Long> finalRecipientIds = new ArrayList<>();
         if (recipientIds == null || recipientIds.isEmpty()) {
-            recipientIds = userAccountRepository.findAll().stream()
+            finalRecipientIds = userAccountRepository.findAll().stream()
                                                 .map(UserAccount::getId)
+                                                .filter(id -> !id.equals(adminId)) // Exclude admin from recipients if broadcasting
                                                 .collect(Collectors.toList());
+        } else {
+            finalRecipientIds = recipientIds.stream()
+                                            .filter(id -> !id.equals(adminId)) // Exclude admin from explicit recipients
+                                            .collect(Collectors.toList());
         }
 
-        for (Long recipientId : recipientIds) {
-            // Ne pas s'envoyer de message à soi-même
-            if (recipientId.equals(adminId)) {
-                continue;
-            }
+        // 1. Save AdminNotification for history tracking
+        AdminNotification adminNotification = new AdminNotification();
+        adminNotification.setSenderAdmin(adminUser);
+        adminNotification.setTitle(request.getContent().length() > 50 ? request.getContent().substring(0, 50) + "..." : request.getContent()); // Use first part of content as title
+        adminNotification.setContent(request.getContent());
+        adminNotification.setType(recipientIds == null || recipientIds.isEmpty() ? "BROADCAST" : "INDIVIDUAL_BATCH");
+        try {
+            adminNotification.setRecipientIdsJson(objectMapper.writeValueAsString(finalRecipientIds));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize recipient IDs for AdminNotification", e);
+        }
+        adminNotificationRepository.save(adminNotification);
+
+        // 2. Send individual messages via MessageService (retained logic)
+        for (Long recipientId : finalRecipientIds) {
             SendMessageRequest singleMessageRequest = new SendMessageRequest();
             singleMessageRequest.setRecipientId(recipientId);
             singleMessageRequest.setContent(request.getContent());

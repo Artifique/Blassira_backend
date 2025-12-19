@@ -1,0 +1,3 @@
+ALTER TABLE user_accounts
+ADD COLUMN otp_code VARCHAR(255) NULL,
+ADD COLUMN otp_expiration DATETIME NULL;

@@ -47,6 +47,12 @@ public class UserAccount implements UserDetails {
     @Column(name = "trust_charter_accepted_at")
     private LocalDateTime trustCharterAcceptedAt;
 
+    @Column(name = "otp_code")
+    private String otpCode;
+
+    @Column(name = "otp_expiration")
+    private LocalDateTime otpExpiration;
+
     @OneToOne(mappedBy = "userAccount", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserProfile userProfile;
     
@@ -70,7 +76,7 @@ public class UserAccount implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return phoneNumber;
     }
 
     @Override

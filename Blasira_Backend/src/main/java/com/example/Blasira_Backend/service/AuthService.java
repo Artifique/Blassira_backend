@@ -8,4 +8,6 @@ import com.example.Blasira_Backend.model.UserAccount;
 public interface AuthService {
     JwtAuthenticationResponse signup(SignUpRequest signUpRequest);
     JwtAuthenticationResponse login(LoginRequest loginRequest);
+    String requestOtp(String identifier);
+    boolean verifyOtp(String identifier, String otp);
 }
