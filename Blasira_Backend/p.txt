@@ -1,12 +1,4 @@
-Vous avez raison, l'historique des notifications est actuellement statique. Pour le rendre dynamique, j'ai besoin
-  d'un endpoint API qui me fournisse la liste des notifications (messages broadcast) que l'administrateur a
-  envoyées.
-
-  Pourriez-vous me fournir les informations suivantes pour cet endpoint :
-
-   1. Méthode HTTP (GET, POST, etc.)
-   2. URL de l'endpoint (ex: /api/admin/notifications/history)
-   3. Un exemple de corps de réponse JSON pour cet endpoint, incluant les champs que l'interface utilise (id, titre,
-      message, type, destinataires, date d'envoi).
-
-  Une fois ces informations fournies, je pourrai intégrer l'historique des notifications de manière dynamique.
+C:\Users\DELL\Desktop\Projets\BL\Blasira_Backend\src\main\java\com\example\Blasira_Backend\controller\AdminController.java:315:46
+java: cannot find symbol
+  symbol:   method getNotificationHistory()
+  location: variable adminService of type com.example.Blasi

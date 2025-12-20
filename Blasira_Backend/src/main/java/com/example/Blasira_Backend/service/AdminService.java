@@ -604,4 +604,44 @@ public class AdminService {
             messageService.sendMessage(adminId, singleMessageRequest);
         }
     }
+
+    @Transactional(readOnly = true)
+    public List<AdminNotificationDto> getNotificationHistory() {
+        List<AdminNotification> notifications = adminNotificationRepository.findByOrderBySentAtDesc();
+        return notifications.stream()
+                .map(this::mapToAdminNotificationDto)
+                .collect(Collectors.toList());
+    }
+
+    private AdminNotificationDto mapToAdminNotificationDto(AdminNotification notification) {
+        List<Long> recipientIds = new ArrayList<>();
+        if (notification.getRecipientIdsJson() != null && !notification.getRecipientIdsJson().isEmpty()) {
+            try {
+                recipientIds = objectMapper.readValue(notification.getRecipientIdsJson(),
+                        objectMapper.getTypeFactory().constructCollectionType(List.class, Long.class));
+            } catch (JsonProcessingException e) {
+                // Log the error but continue with empty list
+                System.err.println("Error deserializing recipient IDs for notification " + notification.getId() + ": " + e.getMessage());
+            }
+        }
+
+        String senderAdminName = "Unknown Admin";
+        if (notification.getSenderAdmin() != null && notification.getSenderAdmin().getUserProfile() != null) {
+            UserProfile senderProfile = notification.getSenderAdmin().getUserProfile();
+            senderAdminName = senderProfile.getFirstName() + " " + senderProfile.getLastName();
+        } else if (notification.getSenderAdmin() != null) {
+            senderAdminName = notification.getSenderAdmin().getEmail();
+        }
+
+        return AdminNotificationDto.builder()
+                .id(notification.getId())
+                .senderAdminId(notification.getSenderAdmin().getId())
+                .senderAdminName(senderAdminName)
+                .title(notification.getTitle())
+                .content(notification.getContent())
+                .type(notification.getType())
+                .recipientIds(recipientIds)
+                .sentAt(notification.getSentAt())
+                .build();
+    }
 }

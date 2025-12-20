@@ -18,6 +18,7 @@ import com.example.Blasira_Backend.dto.admin.VerificationRequestDto;
 import com.example.Blasira_Backend.dto.document.DocumentDto; // NEW Import DocumentDto
 
 import java.util.List;
+import com.example.Blasira_Backend.dto.admin.AdminNotificationDto; // NEW
 
 /**
  * Contrôleur pour les fonctionnalités d'administration.
@@ -304,4 +305,14 @@ public class AdminController {
         adminService.sendMessageToMultipleUsers(request, currentUser);
         return ResponseEntity.accepted().build();
     }
+
+    /**
+     * Récupère l'historique des notifications envoyées par les administrateurs.
+     * @return Une liste de DTOs de notifications d'administration.
+     */
+    @GetMapping("/notifications/history")
+    public ResponseEntity<List<AdminNotificationDto>> getNotificationHistory() {
+        return ResponseEntity.ok(adminService.getNotificationHistory());
+    }
 }
+

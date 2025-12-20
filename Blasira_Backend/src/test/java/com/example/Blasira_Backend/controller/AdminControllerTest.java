@@ -18,8 +18,6 @@ import com.example.Blasira_Backend.service.PaymentService;
 import com.example.Blasira_Backend.service.ReviewService;
 import com.example.Blasira_Backend.service.SupportTicketService; // NEW
 import com.example.Blasira_Backend.repository.AppSettingRepository; // NEW
-import com.example.Blasira_Backend.controller.SupportTicketController; // NEW
-import com.fasterxml.jackson.databind.ObjectMapper; // NEW
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -87,7 +85,6 @@ public class AdminControllerTest {
     @MockBean private ReviewRepository reviewRepository; // NEW
     @MockBean private ReviewService reviewService; // NEW
     @MockBean private AppSettingRepository appSettingRepository; // NEW
-    @MockBean private ObjectMapper objectMapper; // NEW
     @MockBean private SupportTicketRepository supportTicketRepository; // NEW
     @MockBean private SupportTicketMessageRepository supportTicketMessageRepository; // NEW
 
