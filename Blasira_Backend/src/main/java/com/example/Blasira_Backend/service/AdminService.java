@@ -344,6 +344,15 @@ public class AdminService {
         userAccountRepository.save(userAccount);
     }
 
+    @Transactional // NEW METHOD
+    public void suspendUser(Long userId, boolean suspendStatus) {
+        UserAccount userAccount = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new UserProfileNotFoundException("User account not found with id: " + userId));
+        userAccount.setSuspended(suspendStatus);
+        userAccountRepository.save(userAccount);
+        System.out.println("DEBUG: User " + userId + " suspended status set to " + suspendStatus); // NEW LOG
+    }
+
     @Transactional(readOnly = true)
     public List<UserDto> getAllUsers() {
         return userAccountRepository.findAll().stream()
@@ -377,10 +386,11 @@ public class AdminService {
                             .firstName(userProfile != null ? userProfile.getFirstName() : null)
                             .lastName(userProfile != null ? userProfile.getLastName() : null)
                             .email(userAccount.getEmail())
+                            .phoneNumber(userAccount.getPhoneNumber()) // NEW
                             .roles(userAccount.getRoles().stream().map(Enum::name).collect(Collectors.toList()))
                             .documentId(primaryDocument != null ? primaryDocument.getId() : null)
                             .documentStatus(primaryDocument != null ? primaryDocument.getStatus() : null)
-                            .documentUploadDate(primaryDocument != null ? primaryDocument.getCreatedAt() : null)
+                            .submissionDate(primaryDocument != null ? primaryDocument.getCreatedAt() : null) // Renamed from documentUploadDate
                             .build();
                 })
                 .collect(Collectors.toList());

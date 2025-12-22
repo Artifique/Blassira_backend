@@ -16,8 +16,9 @@ public class UserDocumentStatusDto {
     private String firstName;
     private String lastName;
     private String email;
+    private String phoneNumber; // NEW
     private List<String> roles; // Changed to List<String> for simplicity in DTO
     private Long documentId; // Can be null if no document uploaded
     private DocumentStatus documentStatus; // Status of the primary document or overall
-    private LocalDateTime documentUploadDate; // Date of the primary document upload/update
+    private LocalDateTime submissionDate; // Renamed from documentUploadDate
 }

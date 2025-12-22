@@ -19,6 +19,7 @@ import com.example.Blasira_Backend.dto.document.DocumentDto; // NEW Import Docum
 
 import java.util.List;
 import com.example.Blasira_Backend.dto.admin.AdminNotificationDto; // NEW
+import com.example.Blasira_Backend.dto.admin.UpdateUserSuspensionRequest; // NEW
 
 /**
  * Contrôleur pour les fonctionnalités d'administration.
@@ -167,6 +168,19 @@ public class AdminController {
     public ResponseEntity<UserDto> updateUserDetails(@PathVariable Long userId, @RequestBody UpdateUserRequest request) {
         return ResponseEntity.ok(adminService.updateUserDetails(userId, request));
     }
+
+    /**
+     * Permet à un administrateur de suspendre ou de réactiver un compte utilisateur.
+     * @param userId L'ID de l'utilisateur à suspendre/réactiver.
+     * @param request Le DTO contenant le statut de suspension (isSuspended: true/false).
+     * @return Une réponse vide si l'opération réussit.
+     */
+    @PutMapping("/users/{userId}/suspend")
+    public ResponseEntity<Void> suspendUser(@PathVariable Long userId, @RequestBody UpdateUserSuspensionRequest request) {
+        adminService.suspendUser(userId, request.isSuspended());
+        return ResponseEntity.ok().build();
+    }
+
 
     @GetMapping("/vehicles")
     public ResponseEntity<List<com.example.Blasira_Backend.dto.vehicle.VehicleDto>> getAllVehicles() {

@@ -42,6 +42,8 @@ public class UserAccount implements UserDetails {
     private boolean isEmailVerified = false;
     @Column(name = "is_phone_verified")
     private boolean isPhoneVerified = false;
+    @Column(name = "is_suspended") // NEW
+    private boolean isSuspended = false; // NEW
     @Column(name = "verification_status")
     private String verificationStatus = "NOT_VERIFIED";
     @Column(name = "trust_charter_accepted_at")
