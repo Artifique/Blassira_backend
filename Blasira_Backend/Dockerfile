@@ -7,17 +7,16 @@ WORKDIR /app
 RUN apk add --no-cache maven
 
 # Copier les fichiers de configuration Maven
-# Si le Dockerfile est dans BL/Blasira_Backend/, copier depuis le répertoire parent
-COPY Blasira_Backend/pom.xml .
-COPY Blasira_Backend/.mvn .mvn
-COPY Blasira_Backend/mvnw .
+COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
 RUN chmod +x mvnw
 
 # Télécharger les dépendances (cache layer)
 RUN ./mvnw dependency:go-offline -B
 
 # Copier le code source
-COPY Blasira_Backend/src ./src
+COPY src ./src
 
 # Construire l'application
 RUN ./mvnw clean package -DskipTests
