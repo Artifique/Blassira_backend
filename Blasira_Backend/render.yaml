@@ -1,0 +1,28 @@
+# Configuration Render pour le backend Blasira
+services:
+  - type: web
+    name: blasira-backend
+    env: java
+    buildCommand: ./mvnw clean package -DskipTests
+    startCommand: java -jar target/Blasira_Backend-0.0.1-SNAPSHOT.jar
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STORAGE_LOCATION
+        value: uploads
+      - key: SHOW_SQL
+        value: false
+      - key: HIBERNATE_SQL_LOG
+        value: WARN
+      - key: HIBERNATE_BIND_LOG
+        value: WARN
+      - key: FLYWAY_CLEAN_DISABLED
+        value: true
